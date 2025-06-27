@@ -28,7 +28,7 @@ const bookSchema = new Schema<IBook, Model<IBook>, bookMethods>(
   }
 );
 
-// here used instance method to update book availability
+
 bookSchema.method(
   "updateBookAvailability",
  async function () {
@@ -36,7 +36,8 @@ bookSchema.method(
     await this.save();
   }
 );
-// here used pre hook to update book availability before saving
+
+
 bookSchema.pre("save", async function (next){
   this.available = this.copies > 0 ? true : false;
   next();
