@@ -1,53 +1,115 @@
-// src/controllers/book.controller.ts
-import { Request, Response, NextFunction } from 'express';
-import { Book } from '../models/book.model';
+import express, { NextFunction, Request, Response } from "express";
+import { Book } from "../models/book.model";
+import { sendError } from "../../utils/handleError";
 
+export const bookRouter = express.Router();
 
-export const createBook = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const book = new Book(req.body);
-    const saved = await book.save();
-    res.status(201).json({ success: true, message: 'Book created successfully', data: saved });
-  } catch (err) {
-    next(err);
+// create book
+bookRouter.post(
+  "/",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const body = req.body;
+    try {
+      const book = await Book.create(body);
+      res.status(201).json({
+        success: true,
+        message: "Book created successfully",
+        data: book,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-};
+);
 
-export const getAllBooks = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { filter, sortBy = 'createdAt', sort = 'desc', limit = 10 } = req.query as any;
-    const query: any = filter ? { genre: filter } : {};
-    const books = await Book.find(query).sort({ [sortBy]: sort === 'asc' ? 1 : -1 }).limit(Number(limit));
-    res.json({ success: true, message: 'Books retrieved successfully', data: books });
-  } catch (err) {
-    next(err);
+// get all books
+bookRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  const { filter, sortBy, sort, limit } = req.query;
+  const query: any = {};
+  
+  if (filter) {
+    query.genre = filter;
   }
-};
+  try {
+    const books = await Book.find(query)
+      .sort({ [sortBy as string]: sort === "desc" ? -1 : 1 })
+      .limit(Number(limit));
+    res.status(200).json({
+      success: true,
+      message: "Books retrieved successfully",
+      data: books,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-export const getBookById = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const book = await Book.findById(req.params.bookId);
-    if (!book) return res.status(404).json({ success: false, message: 'Book not found', error: {} });
-    res.json({ success: true, message: 'Book retrieved successfully', data: book });
-  } catch (err) {
-    next(err);
+// get book by id
+bookRouter.get(
+  "/:bookId",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const bookId = req.params.bookId;
+    try {
+      const book = await Book.findById(bookId);
+      if(!book) {
+        return sendError(res, "Book not found", null, 404);
+      }
+      res.status(200).json({
+        success: true,
+        message: "Book retrieved successfully",
+        data: book,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-};
+);
 
-export const updateBook = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const updated = await Book.findByIdAndUpdate(req.params.bookId, req.body, { new: true, runValidators: true });
-    res.json({ success: true, message: 'Book updated successfully', data: updated });
-  } catch (err) {
-    next(err);
+// update book by Id
+bookRouter.put(
+  "/:bookId",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const bookId = req.params.bookId;
+    const updatedBookData = req.body;
+    try {
+      const book = await Book.findByIdAndUpdate(bookId, updatedBookData, {
+        new: true,
+        runValidators:true, // this is a new things for me, and its help us to enable validators to validate with schema
+      });
+      if (!book) {
+        return sendError(res, "Book not found", null, 404);
+      }
+      await book?.updateBookAvailability();
+      res.status(200).json({
+        success: true,
+        message: "Book updated successfully",
+        data: book,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-};
+);
 
-export const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await Book.findByIdAndDelete(req.params.bookId);
-    res.json({ success: true, message: 'Book deleted successfully', data: null });
-  } catch (err) {
-    next(err);
+// delete book by id
+bookRouter.delete(
+  "/:bookId",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const bookId = req.params.bookId;
+    try {
+      const book = await Book.findByIdAndDelete(bookId);
+
+      if (!book) {
+        return sendError(res, "Book not found", null, 404);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Book deleted successfully",
+        data: book,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-};
+);

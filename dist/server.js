@@ -22,11 +22,11 @@ function main() {
             yield mongoose_1.default.connect('mongodb+srv://757mohammadatiq:757mohammadatiq@cluster0.iyiex3d.mongodb.net/advanced-note-app?retryWrites=true&w=majority&appName=Cluster0');
             console.log('✅ Connected to MongoDB with Mongoose');
             server = app_1.default.listen(PORT, () => {
-                console.log(`🚀 Server is running on port ${PORT}`);
+                console.log(` Server is running on port ${PORT}`);
             });
         }
         catch (error) {
-            console.error('❌ Error starting the server:', error);
+            console.error(' Error starting the server:', error);
         }
     });
 }

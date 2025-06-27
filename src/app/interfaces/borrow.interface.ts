@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import { Date, Types } from "mongoose";
 
-export interface IBorrow extends Document {
-  book: mongoose.Types.ObjectId;
-  quantity: number;
-  dueDate: Date;
+export interface IBorrow {
+    book: Types.ObjectId;
+    quantity: number;
+    dueDate: Date;
 }

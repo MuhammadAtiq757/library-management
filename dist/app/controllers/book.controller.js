@@ -8,61 +8,107 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteBook = exports.updateBook = exports.getBookById = exports.getAllBooks = exports.createBook = void 0;
+exports.bookRouter = void 0;
+const express_1 = __importDefault(require("express"));
 const book_model_1 = require("../models/book.model");
-const createBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const handleError_1 = require("../../utils/handleError");
+exports.bookRouter = express_1.default.Router();
+// create book
+exports.bookRouter.post("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const body = req.body;
     try {
-        const book = new book_model_1.Book(req.body);
-        const saved = yield book.save();
-        res.status(201).json({ success: true, message: 'Book created successfully', data: saved });
+        const book = yield book_model_1.Book.create(body);
+        res.status(201).json({
+            success: true,
+            message: "Book created successfully",
+            data: book,
+        });
     }
-    catch (err) {
-        next(err);
+    catch (error) {
+        next(error);
     }
-});
-exports.createBook = createBook;
-const getAllBooks = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+}));
+// get all books
+exports.bookRouter.get("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { filter, sortBy, sort, limit } = req.query;
+    const query = {};
+    if (filter) {
+        query.genre = filter;
+    }
     try {
-        const { filter, sortBy = 'createdAt', sort = 'desc', limit = 10 } = req.query;
-        const query = filter ? { genre: filter } : {};
-        const books = yield book_model_1.Book.find(query).sort({ [sortBy]: sort === 'asc' ? 1 : -1 }).limit(Number(limit));
-        res.json({ success: true, message: 'Books retrieved successfully', data: books });
+        const books = yield book_model_1.Book.find(query)
+            .sort({ [sortBy]: sort === "desc" ? -1 : 1 })
+            .limit(Number(limit));
+        res.status(200).json({
+            success: true,
+            message: "Books retrieved successfully",
+            data: books,
+        });
     }
-    catch (err) {
-        next(err);
+    catch (error) {
+        next(error);
     }
-});
-exports.getAllBooks = getAllBooks;
-const getBookById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+}));
+// get book by id
+exports.bookRouter.get("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const bookId = req.params.bookId;
     try {
-        const book = yield book_model_1.Book.findById(req.params.bookId);
-        if (!book)
-            return res.status(404).json({ success: false, message: 'Book not found', error: {} });
-        res.json({ success: true, message: 'Book retrieved successfully', data: book });
+        const book = yield book_model_1.Book.findById(bookId);
+        if (!book) {
+            return (0, handleError_1.sendError)(res, "Book not found", null, 404);
+        }
+        res.status(200).json({
+            success: true,
+            message: "Book retrieved successfully",
+            data: book,
+        });
     }
-    catch (err) {
-        next(err);
+    catch (error) {
+        next(error);
     }
-});
-exports.getBookById = getBookById;
-const updateBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+}));
+// update book by Id
+exports.bookRouter.put("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const bookId = req.params.bookId;
+    const updatedBookData = req.body;
     try {
-        const updated = yield book_model_1.Book.findByIdAndUpdate(req.params.bookId, req.body, { new: true, runValidators: true });
-        res.json({ success: true, message: 'Book updated successfully', data: updated });
+        const book = yield book_model_1.Book.findByIdAndUpdate(bookId, updatedBookData, {
+            new: true,
+            runValidators: true, // this is a new things for me, and its help us to enable validators to validate with schema
+        });
+        if (!book) {
+            return (0, handleError_1.sendError)(res, "Book not found", null, 404);
+        }
+        yield (book === null || book === void 0 ? void 0 : book.updateBookAvailability());
+        res.status(200).json({
+            success: true,
+            message: "Book updated successfully",
+            data: book,
+        });
     }
-    catch (err) {
-        next(err);
+    catch (error) {
+        next(error);
     }
-});
-exports.updateBook = updateBook;
-const deleteBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+}));
+// delete book by id
+exports.bookRouter.delete("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const bookId = req.params.bookId;
     try {
-        yield book_model_1.Book.findByIdAndDelete(req.params.bookId);
-        res.json({ success: true, message: 'Book deleted successfully', data: null });
+        const book = yield book_model_1.Book.findByIdAndDelete(bookId);
+        if (!book) {
+            return (0, handleError_1.sendError)(res, "Book not found", null, 404);
+        }
+        res.status(200).json({
+            success: true,
+            message: "Book deleted successfully",
+            data: book,
+        });
     }
-    catch (err) {
-        next(err);
+    catch (error) {
+        next(error);
     }
-});
-exports.deleteBook = deleteBook;
+}));

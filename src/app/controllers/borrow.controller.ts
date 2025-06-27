@@ -1,51 +1,70 @@
-// src/controllers/borrow.controller.ts
-import { Request, Response, NextFunction } from 'express';
-import { Book } from '../models/book.model';
-import { Borrow } from '../models/borrow.model';
+import express, { NextFunction, Request, Response } from "express";
+import { Book } from "../models/book.model";
+import { Borrow } from "../models/borrow.model";
+import { sendError } from "../../utils/handleError";
 
+export const borrowRouter = express.Router();
 
-
-export const borrowBook = async (req: Request, res: Response, next: NextFunction) => {
+// create borrow
+borrowRouter.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  const { book: bookId, quantity, dueDate } = req.body;
   try {
-    const { book: bookId, quantity, dueDate } = req.body;
-    const book = await Book.findById(bookId);
-    if (!book) return res.status(404).json({ success: false, message: 'Book not found', error: {} });
-    if (book.copies < quantity) {
-      return res.status(400).json({ success: false, message: 'Not enough copies available', error: {} });
+    const book: any = await Book.findById(bookId);
+    if (!book) {
+      return sendError(res, "Book not found", null, 404);
     }
-    book.copies -= quantity;
-    book.checkAvailability();
-    await book.save();
+    if (quantity > book.copies) {
+      return sendError(res, "Not enough copies available", null, 400);
+    }
 
-    const borrowRecord = await new Borrow({ book: book._id, quantity, dueDate }).save();
-    res.status(201).json({ success: true, message: 'Book borrowed successfully', data: borrowRecord });
-  } catch (err) {
-    next(err);
+    const borrow = await Borrow.create({ book: bookId, quantity, dueDate });
+    res.status(201).json({
+      success: true,
+      message: "Book borrowed successfully",
+      data: borrow,
+    });
+  } catch (error) {
+    next(error);
   }
-};
+});
 
-export const getBorrowSummary = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const summary = await Borrow.aggregate([
-      { $group: { _id: '$book', totalQuantity: { $sum: '$quantity' } } },
-      {
-        $lookup: {
-          from: 'books',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'bookDetails'
-        }
+borrowRouter.get("/", async (req: Request, res: Response) => {
+  const summary = await Borrow.aggregate([
+    {
+      $group: {
+        _id: "$book",
+        totalQuantity: { $sum: "$quantity" },
       },
-      { $unwind: '$bookDetails' },
-      {
-        $project: {
-          book: { title: '$bookDetails.title', isbn: '$bookDetails.isbn' },
-          totalQuantity: 1
-        }
-      }
-    ]);
-    res.json({ success: true, message: 'Borrowed books summary retrieved successfully', data: summary });
-  } catch (err) {
-    next(err);
-  }
-}; 
+    },
+    {
+      $lookup: {
+        from: "books",
+        localField: "_id",
+        foreignField: "_id",
+        as: "book",
+      },
+    },
+    {
+      $unwind: "$book",
+    },
+    {
+      $project: {
+        book: {
+          title: "$book.title",
+          isbn: "$book.isbn",
+        },
+        _id: 0,
+        totalQuantity: 1,
+      },
+    },
+    {
+      $sort: { totalQuantity: -1 },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Borrowed books summary retrieved successfully",
+    data: summary,
+  });
+});

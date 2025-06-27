@@ -32,27 +32,53 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Book = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const BookSchema = new mongoose_1.Schema({
+const bookSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
     author: { type: String, required: true },
-    genre: {
-        type: String,
-        enum: ['FICTION', 'NON_FICTION', 'SCIENCE', 'HISTORY', 'BIOGRAPHY', 'FANTASY'],
-        required: true,
-    },
+    genre: [
+        "FICTION",
+        "NON_FICTION",
+        "SCIENCE",
+        "HISTORY",
+        "BIOGRAPHY",
+        "FANTASY",
+    ],
     isbn: { type: String, required: true, unique: true },
-    description: { type: String },
-    copies: { type: Number, required: true, min: [0, 'Copies must be a positive number'] },
+    description: { type: String, default: "" },
+    copies: {
+        type: Number,
+        required: true,
+        min: [0, "Copies must be a positive number"],
+    },
     available: { type: Boolean, default: true },
-}, { timestamps: true });
-BookSchema.methods.checkAvailability = function () {
-    this.available = this.copies > 0;
-};
-BookSchema.pre('save', function (next) {
-    this.checkAvailability();
-    next();
+}, {
+    timestamps: true,
+    versionKey: false,
 });
-exports.Book = mongoose_1.default.model('Book', BookSchema);
+// here used instance method to update book availability
+bookSchema.method("updateBookAvailability", function () {
+    return __awaiter(this, void 0, void 0, function* () {
+        this.available = this.copies > 0 ? true : false;
+        yield this.save();
+    });
+});
+// here used pre hook to update book availability before saving
+bookSchema.pre("save", function (next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        this.available = this.copies > 0 ? true : false;
+        next();
+    });
+});
+exports.Book = mongoose_1.default.model("Book", bookSchema);
