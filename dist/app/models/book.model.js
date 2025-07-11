@@ -67,14 +67,12 @@ const bookSchema = new mongoose_1.Schema({
     timestamps: true,
     versionKey: false,
 });
-// here used instance method to update book availability
 bookSchema.method("updateBookAvailability", function () {
     return __awaiter(this, void 0, void 0, function* () {
         this.available = this.copies > 0 ? true : false;
         yield this.save();
     });
 });
-// here used pre hook to update book availability before saving
 bookSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {
         this.available = this.copies > 0 ? true : false;

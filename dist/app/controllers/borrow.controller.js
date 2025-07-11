@@ -18,7 +18,6 @@ const book_model_1 = require("../models/book.model");
 const borrow_model_1 = require("../models/borrow.model");
 const handleError_1 = require("../../utils/handleError");
 exports.borrowRouter = express_1.default.Router();
-// create borrow
 exports.borrowRouter.post("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { book: bookId, quantity, dueDate } = req.body;
     try {

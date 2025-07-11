@@ -17,7 +17,6 @@ const express_1 = __importDefault(require("express"));
 const book_model_1 = require("../models/book.model");
 const handleError_1 = require("../../utils/handleError");
 exports.bookRouter = express_1.default.Router();
-// create book
 exports.bookRouter.post("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const body = req.body;
     try {
@@ -32,7 +31,6 @@ exports.bookRouter.post("/", (req, res, next) => __awaiter(void 0, void 0, void 
         next(error);
     }
 }));
-// get all books
 exports.bookRouter.get("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { filter, sortBy, sort, limit } = req.query;
     const query = {};
@@ -53,7 +51,6 @@ exports.bookRouter.get("/", (req, res, next) => __awaiter(void 0, void 0, void 0
         next(error);
     }
 }));
-// get book by id
 exports.bookRouter.get("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const bookId = req.params.bookId;
     try {
@@ -71,14 +68,13 @@ exports.bookRouter.get("/:bookId", (req, res, next) => __awaiter(void 0, void 0,
         next(error);
     }
 }));
-// update book by Id
 exports.bookRouter.put("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const bookId = req.params.bookId;
     const updatedBookData = req.body;
     try {
         const book = yield book_model_1.Book.findByIdAndUpdate(bookId, updatedBookData, {
             new: true,
-            runValidators: true, // this is a new things for me, and its help us to enable validators to validate with schema
+            runValidators: true,
         });
         if (!book) {
             return (0, handleError_1.sendError)(res, "Book not found", null, 404);
@@ -94,7 +90,6 @@ exports.bookRouter.put("/:bookId", (req, res, next) => __awaiter(void 0, void 0,
         next(error);
     }
 }));
-// delete book by id
 exports.bookRouter.delete("/:bookId", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const bookId = req.params.bookId;
     try {
